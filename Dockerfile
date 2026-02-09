@@ -7,12 +7,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
 FROM debian:bookworm-slim
 # Install necessary tools for document conversion
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-writer \
     libreoffice-calc \
     libreoffice-impress \
     libreoffice-draw \
-    libreoffice-pdfimport \
     default-jre-headless \
     fonts-dejavu \
     fonts-liberation \
