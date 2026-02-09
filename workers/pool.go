@@ -3,6 +3,7 @@ package workers
 import (
 	"context"
 	"fmt"
+	"log"
 	"path/filepath"
 	"sync"
 
@@ -63,19 +64,26 @@ func NewEngineManager(numCPU int) *EngineManager {
 	mgr := &EngineManager{}
 
 	mgr.LibreOfficePool = NewWorkerPool(numCPU, func(job models.Job) {
+		log.Printf("[%s] LibreOffice worker starting: %s -> %s", job.ID, job.FromFormat, job.ToFormat)
 		outputPath := filepath.Join(job.TempDir, "output."+job.ToFormat)
 		err := converters.LibreOfficeConvert(job.InputPath, job.TempDir, job.ToFormat)
 
 		if err == nil {
 			// Find the actual output file (LibreOffice might rename it)
 			matches, _ := filepath.Glob(filepath.Join(job.TempDir, "*."+job.ToFormat))
-			fmt.Printf("LibreOffice matches for %s: %v\n", job.ToFormat, matches)
+			log.Printf("[%s] LibreOffice matches for %s: %v", job.ID, job.ToFormat, matches)
 			if len(matches) > 0 {
 				outputPath = matches[0]
 			} else {
 				// Try case-insensitive or common variations if needed, but for now just fail with info
 				err = fmt.Errorf("conversion succeeded but no output file found in %s for format %s", job.TempDir, job.ToFormat)
 			}
+		}
+
+		if err != nil {
+			log.Printf("[%s] LibreOffice worker failed: %v", job.ID, err)
+		} else {
+			log.Printf("[%s] LibreOffice worker finished: %s", job.ID, outputPath)
 		}
 
 		job.ResultChan <- models.JobResult{

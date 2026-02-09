@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -54,9 +55,11 @@ func (h *ConversionHandler) HandleConvert(w http.ResponseWriter, r *http.Request
 
 	// Create temp directory for this request
 	reqID := uuid.New().String()
+	log.Printf("[%s] Starting conversion request: %s -> %s", reqID, from, to)
 	tempDir := filepath.Join("tmp", reqID)
 	err = os.MkdirAll(tempDir, 0755)
 	if err != nil {
+		log.Printf("[%s] Failed to create temp dir: %v", reqID, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -94,15 +97,19 @@ func (h *ConversionHandler) HandleConvert(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	log.Printf("[%s] Job queued for %s -> %s", reqID, from, to)
 	pool.JobQueue <- job
 
 	// Wait for result
 	result := <-resultChan
 	if !result.Success {
+		log.Printf("[%s] Conversion failed: %v", reqID, result.Error)
 		job.Cleanup()
 		http.Error(w, fmt.Sprintf("Conversion failed: %v", result.Error), http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("[%s] Conversion successful, streaming file: %s", reqID, result.Path)
 
 	// Stream response
 	downloadFile, err := os.Open(result.Path)

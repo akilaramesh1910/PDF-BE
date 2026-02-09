@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,10 +49,10 @@ func LibreOfficeConvert(inputPath, outputDir, toFormat string) error {
 	}
 
 	cmd := exec.Command(sofficePath, args...)
-	fmt.Printf("Executing: %s %v\n", sofficePath, args)
+	log.Printf("Executing: %s %v", sofficePath, args)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("LibreOffice error output: %s\n", string(output))
+		log.Printf("LibreOffice error output: %s", string(output))
 		return fmt.Errorf("LibreOffice failed: %v, output: %s", err, string(output))
 	}
 	return nil
