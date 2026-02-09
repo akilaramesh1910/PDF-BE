@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 // LibreOffice: DOCX -> PDF, PDF -> DOCX, PPT -> PDF, XLSX -> PDF
@@ -16,7 +17,16 @@ func LibreOfficeConvert(inputPath, outputDir, toFormat string) error {
 		sofficePath = "soffice" // Fallback to PATH
 	}
 
+	absOutputDir, err := filepath.Abs(outputDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %v", err)
+	}
+
+	// Create a unique user installation directory to avoid locking issues in containers
+	userInstallDir := filepath.Join(absOutputDir, "soffice_user")
+
 	args := []string{
+		"-env:UserInstallation=file://" + userInstallDir,
 		"--headless",
 		"--convert-to", toFormat,
 		"--outdir", outputDir,

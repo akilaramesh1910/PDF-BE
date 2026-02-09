@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y \
     qpdf \
     && rm -rf /var/lib/apt/lists/*
 
+# Fix ImageMagick policy to allow PDF operations
+RUN sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml
+
 WORKDIR /app
 COPY --from=builder /app/main .
 # Create tmp directory for conversions
