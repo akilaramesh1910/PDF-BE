@@ -11,6 +11,11 @@ RUN apt-get update && apt-get install -y \
     libreoffice-writer \
     libreoffice-calc \
     libreoffice-impress \
+    libreoffice-draw \
+    libreoffice-pdfimport \
+    default-jre-headless \
+    fonts-dejavu \
+    fonts-liberation \
     poppler-utils \
     imagemagick \
     pandoc \

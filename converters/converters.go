@@ -14,28 +14,44 @@ func LibreOfficeConvert(inputPath, outputDir, toFormat string) error {
 		sofficePath = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
 	}
 	if _, err := os.Stat(sofficePath); os.IsNotExist(err) {
+		sofficePath = "/usr/bin/libreoffice"
+	}
+	if _, err := os.Stat(sofficePath); os.IsNotExist(err) {
+		sofficePath = "/usr/bin/soffice"
+	}
+	if _, err := os.Stat(sofficePath); os.IsNotExist(err) {
 		sofficePath = "soffice" // Fallback to PATH
 	}
 
 	absOutputDir, err := filepath.Abs(outputDir)
 	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %v", err)
+		return fmt.Errorf("failed to get absolute path for output: %v", err)
+	}
+
+	absInputPath, err := filepath.Abs(inputPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path for input: %v", err)
 	}
 
 	// Create a unique user installation directory to avoid locking issues in containers
 	userInstallDir := filepath.Join(absOutputDir, "soffice_user")
+	if err := os.MkdirAll(userInstallDir, 0755); err != nil {
+		return fmt.Errorf("failed to create user installation directory: %v", err)
+	}
 
 	args := []string{
 		"-env:UserInstallation=file://" + userInstallDir,
 		"--headless",
 		"--convert-to", toFormat,
-		"--outdir", outputDir,
-		inputPath,
+		"--outdir", absOutputDir,
+		absInputPath,
 	}
 
 	cmd := exec.Command(sofficePath, args...)
+	fmt.Printf("Executing: %s %v\n", sofficePath, args)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Printf("LibreOffice error output: %s\n", string(output))
 		return fmt.Errorf("LibreOffice failed: %v, output: %s", err, string(output))
 	}
 	return nil
